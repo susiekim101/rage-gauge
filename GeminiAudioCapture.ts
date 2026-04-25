@@ -123,6 +123,7 @@ export class GeminiAudioCapture {
       await this.openWebSocket()
       await this.sendSetupMessage()
       
+      // Permissions and Mode are on the AudioModule
       const { granted } = await AudioModule.requestRecordingPermissionsAsync()
       if (!granted) throw new Error('Microphone permission denied')
 
@@ -274,14 +275,14 @@ export class GeminiAudioCapture {
   // ── Private: chunk recording loop ──────────────────────────────────────────
   // Creates a single AudioRecorder, prepares it once, then cycles record→stop
   // every CHUNK_MS milliseconds and sends each chunk to Gemini.
-private async startChunkLoop(): Promise<void> {
-    // expo-audio uses AudioModule.createRecorder
-    this.recorder = AudioModule.createRecorder(this.getRecordingOptions())
+  private async startChunkLoop(): Promise<void> {
+    // Correct way to create the recorder imperatively
+    this.recorder = createAudioRecorder(this.getRecordingOptions())
     
-    // Use the native listener for metering instead of a manual interval
+    // Set up native metering subscription
     this.recorderSubscription = this.recorder.addListener('recordingStatusUpdate', (status) => {
       if (status.metering != null) {
-        // Map dBFS (-60 to 0) to 0..1 range
+        // dBFS typically -160 to 0. We map -60..0 to 0..1.
         this._audioLevel = Math.max(0, Math.min(1, (status.metering + 60) / 60))
       }
     })
@@ -297,13 +298,18 @@ private async startChunkLoop(): Promise<void> {
       try {
         this.recorder.record()
         await new Promise(r => setTimeout(r, CHUNK_MS))
+        
         if (!this.chunkLoopActive) break
 
         await this.recorder.stop()
+        
+        // In the new API, the uri is available directly on the recorder object
         const uri = this.recorder.uri
         if (uri) void this.sendChunkFromUri(uri)
       } catch (e) {
-        if (this.chunkLoopActive) this.onError(new Error(`Chunk error: ${e}`))
+        if (this.chunkLoopActive) {
+          this.onError(new Error(`Recording chunk failed: ${String(e)}`))
+        }
         break
       }
     }
