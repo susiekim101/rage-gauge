@@ -32,7 +32,7 @@ export async function analyzeAudio(uri: string): Promise<RageAnalysis> {
       contents: [
         {
           parts: [
-            { inline_data: { mime_type: "audio/wav", data: base64 } },
+            { inline_data: { mime_type: "audio/aac", data: base64 } },
             { text: PROMPT },
           ],
         },
