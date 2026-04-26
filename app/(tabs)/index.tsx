@@ -1,7 +1,6 @@
-import { Ionicons } from "@expo/vector-icons";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import React from "react";
-import { LinearGradient } from "expo-linear-gradient";
 import {
   Image,
   Pressable,
@@ -12,6 +11,7 @@ import {
 } from "react-native";
 import MapView from "react-native-maps";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { BottomNav } from "@/components/bottom-nav";
 
 const WEEK_DAYS = [
   { date: 26, active: true },
@@ -262,28 +262,7 @@ export default function HomeDash() {
         </View>
       </ScrollView>
 
-      {/* Custom bottom bar */}
-      <View style={[styles.bottomBar, { paddingBottom: insets.bottom + 8 }]}>
-        <Pressable style={styles.bottomHome}>
-          <Ionicons name="home" size={22} color="#fff" />
-        </Pressable>
-        <Pressable
-          style={styles.startDriveBtn}
-          onPress={() => router.push("/(tabs)/driving")}
-        >
-          <Ionicons name="car" size={18} color="#fff" />
-          <Text style={styles.startDriveText}>Start Drive</Text>
-        </Pressable>
-        <Pressable
-          style={styles.bottomProfile}
-          onPress={() => router.push("/profile")}
-        >
-          <Image
-            source={require("@/assets/images/profile.png")}
-            style={styles.profileImg}
-          />
-        </Pressable>
-      </View>
+      <BottomNav />
     </View>
   );
 }
@@ -459,47 +438,4 @@ const styles = StyleSheet.create({
     paddingTop: 8,
   },
 
-  // Bottom bar
-  bottomBar: {
-    position: "absolute",
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: "#1a1a1a",
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 24,
-    paddingTop: 12,
-  },
-  bottomHome: {
-    width: 44,
-    height: 44,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  startDriveBtn: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    backgroundColor: "#2d3a4a",
-    borderRadius: 30,
-    paddingVertical: 12,
-    paddingHorizontal: 28,
-  },
-  startDriveText: {
-    color: "#fff",
-    fontSize: 16,
-    fontWeight: "700",
-  },
-  bottomProfile: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: "hidden",
-  },
-  profileImg: {
-    width: 44,
-    height: 44,
-  },
 });
