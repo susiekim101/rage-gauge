@@ -1,19 +1,14 @@
 import { Audio } from "expo-av";
-import * as FileSystem from "expo-file-system";
+import { File, Paths } from "expo-file-system"; // Use the new modern import
 
 const ELEVENLABS_API_KEY = process.env.EXPO_PUBLIC_ELEVENLABS_API_KEY;
 const VOICE_ID = process.env.EXPO_PUBLIC_ELEVENLABS_VOICE_ID;
 
 export const playElevenLabsAudio = async (textToSay) => {
   try {
-    if (!ELEVENLABS_API_KEY || !VOICE_ID) {
-      throw new Error("Missing ElevenLabs env vars.");
-    }
-
-    // 1. Define the API endpoint
     const url = `https://api.elevenlabs.io/v1/text-to-speech/${VOICE_ID}?output_format=mp3_44100_128`;
 
-    // 2. Make the request to ElevenLabs
+    // 1. Fetch the audio from ElevenLabs
     const response = await fetch(url, {
       method: "POST",
       headers: {
@@ -23,7 +18,7 @@ export const playElevenLabsAudio = async (textToSay) => {
       },
       body: JSON.stringify({
         text: textToSay,
-        model_id: "eleven_multilingual_v2", // Use v2 for the best quality and emotion
+        model_id: "eleven_multilingual_v2",
         voice_settings: {
           stability: 0.5,
           similarity_boost: 0.75,
@@ -35,32 +30,30 @@ export const playElevenLabsAudio = async (textToSay) => {
       throw new Error(`ElevenLabs API error: ${response.status}`);
     }
 
-    // 3. Convert the response to a Blob, then to Base64
-    const blob = await response.blob();
-    const reader = new FileReader();
+    // 2. Get the raw binary audio data (No more blobs or Base64!)
+    const buffer = await response.arrayBuffer();
+    const audioData = new Uint8Array(buffer);
 
-    reader.readAsDataURL(blob);
-    reader.onloadend = async () => {
-      // Extract the base64 string from the data URL
-      const base64data = reader.result.split(",")[1];
+    // 3. Define the file using the new File and Paths classes
+    const file = new File(Paths.document, "elevenlabs_output.mp3");
 
-      // 4. Save the file locally to the device
-      const fileUri = FileSystem.documentDirectory + "elevenlabs_output.mp3";
-      await FileSystem.writeAsStringAsync(fileUri, base64data, {
-        encoding: FileSystem.EncodingType.Base64,
-      });
+    // Create the file if it doesn't exist yet
+    if (!file.exists) {
+      file.create();
+    }
 
-      // 5. Play the audio using Expo AV
-      const { sound } = await Audio.Sound.createAsync({ uri: fileUri });
-      await sound.playAsync();
+    // 4. Write the binary data directly to the file synchronously
+    file.write(audioData);
 
-      // Unload the sound from memory when it finishes
-      sound.setOnPlaybackStatusUpdate((status) => {
-        if (status.didJustFinish) {
-          sound.unloadAsync();
-        }
-      });
-    };
+    // 5. Play the audio
+    const { sound } = await Audio.Sound.createAsync({ uri: file.uri });
+    await sound.playAsync();
+
+    sound.setOnPlaybackStatusUpdate((status) => {
+      if (status.didJustFinish) {
+        sound.unloadAsync();
+      }
+    });
   } catch (error) {
     console.error("Error playing audio:", error);
   }

@@ -12,7 +12,6 @@ export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSignUp = async () => {
     try {
@@ -37,16 +36,11 @@ export default function LoginScreen() {
         email,
         password,
       );
-      setIsLoggedIn(true);
       Alert.alert("Success!", `Logged in as ${userCredential.user.email}`);
+      router.replace("/profile");
     } catch (error) {
-      setIsLoggedIn(false);
       Alert.alert("Login Error", error.message);
     }
-  };
-
-  const goToProfile = () => {
-    router.push("/profile");
   };
 
   return (
@@ -75,12 +69,6 @@ export default function LoginScreen() {
       <View style={styles.buttonContainer}>
         <Button title="Sign Up" onPress={handleSignUp} color="#841584" />
       </View>
-
-      {isLoggedIn && (
-        <View style={styles.buttonContainer}>
-          <Button title="Go to Profile" onPress={goToProfile} color="#2e7d32" />
-        </View>
-      )}
     </View>
   );
 }
