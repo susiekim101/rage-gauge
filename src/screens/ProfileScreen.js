@@ -28,7 +28,6 @@ const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
 
 const GRADIENT = require("../../assets/images/profile/Rectangle 5.png");
 const TRUCK = require("../../assets/images/profile/🛻.png");
-
 const HEART = require("../../assets/images/friends/line-md_heart.png");
 
 const CAR_IMAGES = [
@@ -248,7 +247,6 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#F7F8F5",
   },
-  // ── Header ──────────────────────────────────────────────────
   header: {
     height: 370,
   },
@@ -320,7 +318,6 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
   },
-  // ── Friends list ─────────────────────────────────────────────
   list: {
     flex: 1,
   },
@@ -416,7 +413,6 @@ const styles = StyleSheet.create({
     height: 28,
     resizeMode: "contain",
   },
-  // ── Bottom bar ───────────────────────────────────────────────
   bottomBar: {
     position: "absolute",
     left: 31,

@@ -20,7 +20,7 @@ export default function RootLayout() {
     <ThemeProvider value={colorScheme === "dark" ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="profile" options={{ title: "Profile" }} />
+        <Stack.Screen name="profile" options={{ headerShown: false }} />
         <Stack.Screen name="friends" options={{ title: "Find Friends" }} />
         <Stack.Screen
           name="modal"

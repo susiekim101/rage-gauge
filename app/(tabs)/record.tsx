@@ -1,3 +1,4 @@
+import { BottomNav } from "@/components/bottom-nav";
 import { useRageRecorder } from "@/hooks/use-rage-recorder";
 import { RAGE_COLORS, RAGE_LABELS } from "@/types/rage";
 import React from "react";
@@ -9,7 +10,6 @@ export default function RecordScreen() {
 
   const isRecording = status === "recording";
   const isAnalyzing = status === "analyzing";
-  const isBusy = isRecording || isAnalyzing;
 
   return (
     <View style={styles.container}>
@@ -80,6 +80,7 @@ export default function RecordScreen() {
       )}
 
       {error && <Text style={styles.error}>{error}</Text>}
+      <BottomNav />
     </View>
   );
 }
