@@ -50,6 +50,7 @@ export default function TabLayout() {
         options={{
           title: 'Driving',
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="car.fill" color={color} />,
+          tabBarStyle: { display: 'none' },
         }}
       />
       <Tabs.Screen
