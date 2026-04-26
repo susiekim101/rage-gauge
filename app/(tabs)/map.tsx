@@ -1,3 +1,4 @@
+import { BottomNav } from "@/components/bottom-nav";
 import { db } from "@/src/config/firebase";
 import { RAGE_COLORS, RageIncident } from "@/types/rage";
 import { Ionicons } from "@expo/vector-icons";
@@ -223,6 +224,7 @@ export default function MapScreen() {
       <Pressable style={styles.locateBtn} onPress={centerOnMe}>
         <Ionicons name="locate" size={24} color="#fff" />
       </Pressable>
+      <BottomNav />
     </View>
   );
 }
@@ -255,7 +257,7 @@ const styles = StyleSheet.create({
   locateBtn: {
     position: "absolute",
     right: 16,
-    bottom: 120,
+    bottom: 210,
     width: 48,
     height: 48,
     borderRadius: 24,
@@ -315,7 +317,7 @@ const styles = StyleSheet.create({
   },
   weekStrip: {
     position: "absolute",
-    bottom: 30,
+    bottom: 130,
     left: 16,
     right: 16,
     backgroundColor: "rgba(0,0,0,0.75)",

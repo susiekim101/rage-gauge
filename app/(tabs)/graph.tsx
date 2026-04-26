@@ -1,3 +1,4 @@
+import { BottomNav } from "@/components/bottom-nav";
 import React from "react";
 import { Dimensions, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -110,6 +111,7 @@ export default function GraphScreen() {
           <Text style={styles.statKey}>incidents</Text>
         </View>
       </View>
+      <BottomNav />
     </View>
   );
 }

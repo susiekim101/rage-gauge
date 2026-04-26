@@ -1,9 +1,10 @@
+import { BottomNav } from "@/components/bottom-nav";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
-import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth } from "../config/firebase";
 
 const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
@@ -12,7 +13,7 @@ const GRADIENT = require("../../assets/images/profile/Rectangle 5.png");
 const TRUCK = require("../../assets/images/profile/🛻.png");
 
 export default function ProfileScreen() {
-  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const user = auth.currentUser;
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const initial = displayName[0]?.toUpperCase();
@@ -61,7 +62,7 @@ export default function ProfileScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <View style={[styles.container, { paddingTop: insets.top }]}>
       {/* Lime gradient from asset */}
       <Image
         source={GRADIENT}
@@ -89,30 +90,7 @@ export default function ProfileScreen() {
       {/* Name */}
       <Text style={styles.name}>{displayName}</Text>
 
-      {/* Bottom navigation bar */}
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomBarPill}>
-          <Pressable onPress={() => router.push("/friends")}>
-            <Ionicons name="person-add-outline" size={24} color="#68695F" />
-          </Pressable>
-
-          <Pressable
-            style={styles.startDriveBtn}
-            onPress={() => router.push("/(tabs)/driving")}
-          >
-            <Ionicons name="car-outline" size={16} color="white" />
-            <Text style={styles.startDriveText}>Start Drive</Text>
-          </Pressable>
-
-          <Pressable style={styles.avatarSmall} onPress={pickPhoto}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.avatarPhoto} />
-            ) : (
-              <Text style={styles.avatarInitial}>{initial}</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
+      <BottomNav avatarUri={photoUri} />
     </View>
   );
 }
@@ -189,58 +167,5 @@ const styles = StyleSheet.create({
     fontSize: 32,
     fontWeight: "700",
     color: "#000",
-  },
-  bottomBar: {
-    position: "absolute",
-    left: 31,
-    right: 31,
-    bottom: 12,
-    height: 85,
-    justifyContent: "center",
-  },
-  bottomBarPill: {
-    backgroundColor: "rgba(9, 9, 9, 0.85)",
-    borderRadius: 44,
-    height: 63,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    gap: 20,
-  },
-  startDriveBtn: {
-    flex: 1,
-    height: 41,
-    backgroundColor: "#68695F",
-    borderRadius: 1000,
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: 8,
-  },
-  startDriveText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  avatarSmall: {
-    width: 41,
-    height: 41,
-    borderRadius: 20.5,
-    backgroundColor: "#D4D5CB",
-    borderWidth: 3,
-    borderColor: "white",
-    transform: [{ rotate: "-4deg" }],
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarPhoto: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarInitial: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#68695F",
   },
 });
