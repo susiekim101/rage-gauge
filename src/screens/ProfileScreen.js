@@ -92,7 +92,9 @@ export default function ProfileScreen() {
       {/* Bottom navigation bar */}
       <View style={styles.bottomBar}>
         <View style={styles.bottomBarPill}>
-          <Ionicons name="map-outline" size={24} color="#68695F" />
+          <Pressable onPress={() => router.push("/friends")}>
+            <Ionicons name="person-add-outline" size={24} color="#68695F" />
+          </Pressable>
 
           <Pressable
             style={styles.startDriveBtn}
