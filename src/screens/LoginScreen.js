@@ -4,15 +4,15 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
 } from "firebase/auth";
+import { doc, setDoc, getDoc } from "firebase/firestore";
 import { useState } from "react";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
-import { auth } from "../config/firebase"; // Import the auth instance we just made
+import { auth, db } from "../config/firebase";
 
 export default function LoginScreen() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
 
   const handleSignUp = async () => {
     try {
@@ -21,6 +21,13 @@ export default function LoginScreen() {
         email,
         password,
       );
+      const username = email.split("@")[0];
+      await setDoc(doc(db, "users", userCredential.user.uid), {
+        displayName: username,
+        searchName: username.toLowerCase(),
+        email,
+        photoUrl: null,
+      });
       Alert.alert(
         "Success!",
         `Account created for ${userCredential.user.email}`,
@@ -31,22 +38,39 @@ export default function LoginScreen() {
   };
 
   const handleLogin = async () => {
+    console.log("1. Login button pressed, email:", email);
     try {
+      console.log("2. Calling signInWithEmailAndPassword...");
       const userCredential = await signInWithEmailAndPassword(
         auth,
         email,
         password,
       );
-      setIsLoggedIn(true);
-      Alert.alert("Success!", `Logged in as ${userCredential.user.email}`);
+      console.log("3. Auth success, uid:", userCredential.user.uid);
+
+      const userRef = doc(db, "users", userCredential.user.uid);
+      console.log("4. Calling getDoc...");
+      const snap = await getDoc(userRef);
+      console.log("5. getDoc done, exists:", snap.exists());
+
+      if (!snap.exists()) {
+        console.log("6. Creating Firestore user doc...");
+        const username = email.split("@")[0];
+        await setDoc(userRef, {
+          displayName: username,
+          searchName: username.toLowerCase(),
+          email,
+          photoUrl: null,
+        });
+        console.log("7. Firestore doc created");
+      }
+
+      console.log("8. Navigating to profile...");
+      router.replace("/profile");
     } catch (error) {
-      setIsLoggedIn(false);
+      console.error("Login error:", error.code, error.message);
       Alert.alert("Login Error", error.message);
     }
-  };
-
-  const goToProfile = () => {
-    router.push("/profile");
   };
 
   return (
@@ -75,12 +99,6 @@ export default function LoginScreen() {
       <View style={styles.buttonContainer}>
         <Button title="Sign Up" onPress={handleSignUp} color="#841584" />
       </View>
-
-      {isLoggedIn && (
-        <View style={styles.buttonContainer}>
-          <Button title="Go to Profile" onPress={goToProfile} color="#2e7d32" />
-        </View>
-      )}
     </View>
   );
 }
