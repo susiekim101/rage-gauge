@@ -1,3 +1,4 @@
+import { BottomNav } from "@/components/bottom-nav";
 import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
@@ -22,6 +23,7 @@ import {
     Text,
     View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { auth, db, storage } from "../config/firebase";
 
 const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
@@ -47,11 +49,13 @@ function progressFromUid(uid) {
 const BAR_WIDTH = 200;
 
 export default function ProfileScreen() {
+  const insets = useSafeAreaInsets();
   const router = useRouter();
   const user = auth.currentUser;
-  const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
-  const initial = displayName[0]?.toUpperCase();
-  const [photoUri, setPhotoUri] = useState(null);
+  const [displayName, setDisplayName] = useState(
+    user?.displayName ?? user?.email?.split("@")[0] ?? "User"
+  );
+const [photoUri, setPhotoUri] = useState(user?.photoURL ?? null);
   const [friends, setFriends] = useState([]);
 
   useEffect(() => {
@@ -63,8 +67,9 @@ export default function ProfileScreen() {
   const loadPhoto = async () => {
     try {
       const snap = await getDoc(doc(db, "users", user.uid));
-      if (snap.exists() && snap.data().photoUrl) {
-        setPhotoUri(snap.data().photoUrl);
+      if (snap.exists()) {
+        if (snap.data().photoUrl) setPhotoUri(snap.data().photoUrl);
+        if (snap.data().displayName) setDisplayName(snap.data().displayName);
       }
     } catch (e) {
       console.warn("Could not load photo:", e.message);
@@ -142,10 +147,10 @@ export default function ProfileScreen() {
   return (
     <View style={styles.container}>
       {/* Fixed header: gradient, photo, truck, name */}
-      <View style={styles.header}>
+      <View style={[styles.header, { height: 370 + insets.top }]}>
         <Image
           source={GRADIENT}
-          style={styles.gradientOverlay}
+          style={[styles.gradientOverlay, { top: -insets.top, height: 157 + insets.top }]}
           resizeMode="cover"
         />
 
@@ -154,7 +159,10 @@ export default function ProfileScreen() {
             {photoUri ? (
               <Image source={{ uri: photoUri }} style={styles.profilePhoto} />
             ) : (
-              <Text style={styles.profileInitial}>{initial}</Text>
+              <Image
+                source={require("../../assets/images/profile.png")}
+                style={styles.profilePhoto}
+              />
             )}
           </View>
           <View style={styles.cameraBadge}>
@@ -214,30 +222,15 @@ export default function ProfileScreen() {
         }}
       />
 
-      {/* Bottom navigation bar */}
-      <View style={styles.bottomBar}>
-        <View style={styles.bottomBarPill}>
-          <Pressable onPress={() => router.push("/friends")}>
-            <Ionicons name="person-add-outline" size={24} color="#68695F" />
-          </Pressable>
+      {/* Home button */}
+      <Pressable
+        style={[styles.homeBtn, { top: insets.top + 8 }]}
+        onPress={() => router.replace("/(tabs)")}
+      >
+        <Ionicons name="home" size={20} color="#68695F" />
+      </Pressable>
 
-          <Pressable
-            style={styles.startDriveBtn}
-            onPress={() => router.push("/(tabs)/driving")}
-          >
-            <Ionicons name="car-outline" size={16} color="white" />
-            <Text style={styles.startDriveText}>Start Drive</Text>
-          </Pressable>
-
-          <Pressable style={styles.avatarSmall} onPress={pickPhoto}>
-            {photoUri ? (
-              <Image source={{ uri: photoUri }} style={styles.avatarPhoto} />
-            ) : (
-              <Text style={styles.avatarInitial}>{initial}</Text>
-            )}
-          </Pressable>
-        </View>
-      </View>
+      <BottomNav avatarUri={photoUri} />
     </View>
   );
 }
@@ -276,7 +269,6 @@ const styles = StyleSheet.create({
     elevation: 8,
     alignItems: "center",
     justifyContent: "center",
-    transform: [{ rotate: "-4deg" }],
     overflow: "hidden",
   },
   profilePhoto: {
@@ -413,57 +405,15 @@ const styles = StyleSheet.create({
     height: 28,
     resizeMode: "contain",
   },
-  bottomBar: {
+  homeBtn: {
     position: "absolute",
-    left: 31,
-    right: 31,
-    bottom: 12,
-    height: 85,
-    justifyContent: "center",
-  },
-  bottomBarPill: {
-    backgroundColor: "rgba(9, 9, 9, 0.85)",
-    borderRadius: 44,
-    height: 63,
-    flexDirection: "row",
-    alignItems: "center",
-    paddingHorizontal: 24,
-    gap: 20,
-  },
-  startDriveBtn: {
-    flex: 1,
-    height: 41,
-    backgroundColor: "#68695F",
-    borderRadius: 1000,
-    flexDirection: "row",
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(104,105,95,0.15)",
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
-  },
-  startDriveText: {
-    color: "white",
-    fontSize: 16,
-    fontWeight: "600",
-  },
-  avatarSmall: {
-    width: 41,
-    height: 41,
-    borderRadius: 20.5,
-    backgroundColor: "#D4D5CB",
-    borderWidth: 3,
-    borderColor: "white",
-    transform: [{ rotate: "-4deg" }],
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-  },
-  avatarPhoto: {
-    width: "100%",
-    height: "100%",
-  },
-  avatarInitial: {
-    fontSize: 15,
-    fontWeight: "700",
-    color: "#68695F",
+    zIndex: 10,
   },
 });

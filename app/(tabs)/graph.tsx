@@ -1,6 +1,8 @@
 import { BottomNav } from "@/components/bottom-nav";
+import { Ionicons } from "@expo/vector-icons";
+import { useRouter } from "expo-router";
 import React from "react";
-import { Dimensions, StyleSheet, Text, View } from "react-native";
+import { Dimensions, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const { width } = Dimensions.get("window");
@@ -80,10 +82,17 @@ function LineGraph({ data }: { data: number[] }) {
 }
 
 export default function GraphScreen() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
 
   return (
     <View style={[styles.container, { paddingTop: insets.top + 16 }]}>
+      <Pressable
+        style={[styles.homeBtn, { top: insets.top + 8 }]}
+        onPress={() => router.replace("/(tabs)")}
+      >
+        <Ionicons name="home" size={20} color="#68695F" />
+      </Pressable>
       <Text style={styles.title}>Rage Graph</Text>
       <Text style={styles.subtitle}>Weekly rage level trend</Text>
 
@@ -174,5 +183,16 @@ const styles = StyleSheet.create({
   statKey: {
     fontSize: 11,
     color: "#888",
+  },
+  homeBtn: {
+    position: "absolute",
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(104,105,95,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
   },
 });

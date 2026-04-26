@@ -1,17 +1,17 @@
-import { SafeAreaView, StyleSheet } from "react-native";
+import { StyleSheet, View } from "react-native";
 import ProfileScreen from "../src/screens/ProfileScreen";
 
 export default function ProfileRoute() {
   return (
-    <SafeAreaView style={styles.container}>
+    <View style={styles.container}>
       <ProfileScreen />
-    </SafeAreaView>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: "#fff",
+    backgroundColor: "#F7F8F5",
   },
 });

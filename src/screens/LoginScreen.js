@@ -1,26 +1,39 @@
-// src/screens/LoginScreen.js
+import { auth, db } from "../config/firebase";
+import { LinearGradient } from "expo-linear-gradient";
 import { useRouter } from "expo-router";
 import {
-    createUserWithEmailAndPassword,
-    signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
 } from "firebase/auth";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
 import { useState } from "react";
-import { auth, db } from "../config/firebase";
+import {
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  View,
+} from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function LoginScreen() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
+  const [isLogin, setIsLogin] = useState(true);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   const handleSignUp = async () => {
+    if (!email || !password) return;
+    setLoading(true);
     try {
-      const userCredential = await createUserWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const username = email.split("@")[0];
       await setDoc(doc(db, "users", userCredential.user.uid), {
         displayName: username,
@@ -28,29 +41,20 @@ export default function LoginScreen() {
         email,
         photoUrl: null,
       });
-      Alert.alert(
-        "Success!",
-        `Account created for ${userCredential.user.email}`,
-      );
+      router.replace("/(tabs)");
     } catch (error) {
       Alert.alert("Sign Up Error", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   const handleLogin = async () => {
-    console.log("1. Login button pressed, email:", email);
+    if (!email || !password) return;
+    setLoading(true);
     try {
-      console.log("2. Calling signInWithEmailAndPassword...");
-      const userCredential = await signInWithEmailAndPassword(
-        auth,
-        email,
-        password,
-      );
-      console.log("3. Auth success, uid:", userCredential.user.uid);
-      console.log("4. Navigating to profile...");
-      router.replace("/profile");
-
-      // Backfill Firestore in background — don't block login if it fails
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      router.replace("/(tabs)");
       try {
         const userRef = doc(db, "users", userCredential.user.uid);
         const snap = await getDoc(userRef);
@@ -62,43 +66,91 @@ export default function LoginScreen() {
             email,
             photoUrl: null,
           });
-          console.log("5. Firestore user doc created");
         }
       } catch (e) {
         console.warn("Firestore backfill skipped:", e.message);
       }
     } catch (error) {
-      console.error("Login error:", error.code, error.message);
       Alert.alert("Login Error", error.message);
+    } finally {
+      setLoading(false);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Welcome to Rage Gauge</Text>
-
-      <TextInput
-        style={styles.input}
-        placeholder="Email"
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        keyboardType="email-address"
-      />
-      <TextInput
-        style={styles.input}
-        placeholder="Password"
-        value={password}
-        onChangeText={setPassword}
-        secureTextEntry
+      <LinearGradient
+        colors={["#DAFF08", "#DAFF0860", "#DAFF0800"]}
+        style={styles.gradient}
       />
 
-      <View style={styles.buttonContainer}>
-        <Button title="Login" onPress={handleLogin} />
-      </View>
-      <View style={styles.buttonContainer}>
-        <Button title="Sign Up" onPress={handleSignUp} color="#841584" />
-      </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+        style={styles.inner}
+      >
+        <ScrollView
+          contentContainerStyle={[styles.scroll, { paddingTop: insets.top + 40 }]}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          {/* Branding */}
+          <Image
+            source={require("../../assets/images/anger.png")}
+            style={styles.angerImg}
+            resizeMode="contain"
+          />
+          <Text style={styles.appName}>Rage Gauge</Text>
+          <Text style={styles.tagline}>Track your road rage, own your drive.</Text>
+
+          {/* Card */}
+          <View style={styles.card}>
+            <Text style={styles.cardTitle}>{isLogin ? "Log in" : "Sign up"}</Text>
+
+            <View style={styles.inputGroup}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#A0A19A"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+                autoCorrect={false}
+              />
+              <TextInput
+                style={styles.input}
+                placeholder="Password"
+                placeholderTextColor="#A0A19A"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+            </View>
+
+            <Pressable
+              style={[styles.primaryBtn, loading && styles.primaryBtnDisabled]}
+              onPress={isLogin ? handleLogin : handleSignUp}
+              disabled={loading}
+            >
+              <Text style={styles.primaryBtnText}>
+                {loading ? "..." : isLogin ? "Log in" : "Create account"}
+              </Text>
+            </Pressable>
+
+            <Pressable
+              style={styles.switchBtn}
+              onPress={() => setIsLogin(!isLogin)}
+            >
+              <Text style={styles.switchText}>
+                {isLogin ? "Don't have an account? " : "Already have an account? "}
+                <Text style={styles.switchLink}>
+                  {isLogin ? "Sign up" : "Log in"}
+                </Text>
+              </Text>
+            </Pressable>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
     </View>
   );
 }
@@ -106,25 +158,92 @@ export default function LoginScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "center",
-    padding: 20,
-    backgroundColor: "#fff",
+    backgroundColor: "#F7F8F5",
   },
-  title: {
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 20,
+  gradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    height: 340,
+  },
+  inner: {
+    flex: 1,
+  },
+  scroll: {
+    paddingHorizontal: 28,
+    paddingBottom: 60,
+    alignItems: "center",
+  },
+  angerImg: {
+    width: 100,
+    height: 100,
+    marginBottom: 12,
+  },
+  appName: {
+    fontSize: 40,
+    fontWeight: "800",
+    color: "#000",
+    letterSpacing: -1,
+  },
+  tagline: {
+    fontSize: 14,
+    color: "#68695F",
+    marginTop: 6,
+    marginBottom: 36,
     textAlign: "center",
   },
-  input: {
-    height: 50,
-    borderColor: "#ccc",
-    borderWidth: 1,
-    borderRadius: 8,
-    paddingHorizontal: 15,
-    marginBottom: 15,
+  card: {
+    width: "100%",
+    backgroundColor: "white",
+    borderRadius: 28,
+    padding: 24,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 20,
+    elevation: 4,
+    gap: 20,
   },
-  buttonContainer: {
-    marginTop: 10,
+  cardTitle: {
+    fontSize: 22,
+    fontWeight: "700",
+    color: "#111",
+  },
+  inputGroup: {
+    gap: 12,
+  },
+  input: {
+    backgroundColor: "rgba(228, 228, 228, 0.85)",
+    borderRadius: 44,
+    paddingHorizontal: 20,
+    paddingVertical: 16,
+    fontSize: 16,
+    color: "#1a1a1a",
+  },
+  primaryBtn: {
+    backgroundColor: "rgba(9, 9, 9, 0.85)",
+    borderRadius: 44,
+    paddingVertical: 17,
+    alignItems: "center",
+  },
+  primaryBtnDisabled: {
+    opacity: 0.5,
+  },
+  primaryBtnText: {
+    color: "white",
+    fontSize: 16,
+    fontWeight: "700",
+  },
+  switchBtn: {
+    alignItems: "center",
+  },
+  switchText: {
+    fontSize: 14,
+    color: "#A0A19A",
+  },
+  switchLink: {
+    color: "#68695F",
+    fontWeight: "700",
   },
 });

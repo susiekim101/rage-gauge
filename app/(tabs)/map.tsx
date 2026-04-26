@@ -3,10 +3,12 @@ import { db } from "@/src/config/firebase";
 import { RAGE_COLORS, RageIncident } from "@/types/rage";
 import { Ionicons } from "@expo/vector-icons";
 import * as Location from "expo-location";
+import { useRouter } from "expo-router";
 import { collection, onSnapshot } from "firebase/firestore";
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import MapView, { Callout, Marker } from "react-native-maps";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const MOCK_INCIDENTS: RageIncident[] = [
   {
@@ -81,6 +83,8 @@ function getWeekDays(incidents: RageIncident[]) {
 }
 
 export default function MapScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const mapRef = useRef<MapView>(null);
   const [location, setLocation] = useState<Location.LocationObject | null>(
     null,
@@ -224,6 +228,12 @@ export default function MapScreen() {
       <Pressable style={styles.locateBtn} onPress={centerOnMe}>
         <Ionicons name="locate" size={24} color="#fff" />
       </Pressable>
+      <Pressable
+        style={[styles.homeBtn, { top: (insets?.top ?? 0) + 8 }]}
+        onPress={() => router.replace("/(tabs)")}
+      >
+        <Ionicons name="home" size={20} color="#fff" />
+      </Pressable>
       <BottomNav />
     </View>
   );
@@ -232,6 +242,17 @@ export default function MapScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   map: { flex: 1 },
+  homeBtn: {
+    position: "absolute",
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
+  },
   callout: {
     backgroundColor: "#1a1a1a",
     borderRadius: 10,
@@ -282,7 +303,7 @@ const styles = StyleSheet.create({
   },
   dateHeader: {
     position: "absolute",
-    top: 60,
+    top: 90,
     right: 16,
     color: "#000",
     fontSize: 40,

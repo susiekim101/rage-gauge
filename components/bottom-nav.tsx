@@ -1,5 +1,8 @@
+import { auth, db } from "@/src/config/firebase";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { doc, getDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -7,9 +10,25 @@ interface BottomNavProps {
   avatarUri?: string | null;
 }
 
-export function BottomNav({ avatarUri }: BottomNavProps = {}) {
+export function BottomNav({ avatarUri: avatarUriProp }: BottomNavProps = {}) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+  const [fetchedUri, setFetchedUri] = useState<string | null>(
+    auth.currentUser?.photoURL ?? null
+  );
+
+  useEffect(() => {
+    if (avatarUriProp) return;
+    const user = auth.currentUser;
+    if (!user) return;
+    getDoc(doc(db, "users", user.uid)).then((snap) => {
+      if (snap.exists() && snap.data().photoUrl) {
+        setFetchedUri(snap.data().photoUrl);
+      }
+    }).catch(() => {});
+  }, [avatarUriProp]);
+
+  const avatarUri = avatarUriProp ?? fetchedUri;
 
   return (
     <View style={[styles.bottomBar, { bottom: 12 + insets.bottom }]}>
@@ -83,7 +102,6 @@ const styles = StyleSheet.create({
     backgroundColor: "#D4D5CB",
     borderWidth: 3,
     borderColor: "white",
-    transform: [{ rotate: "-4deg" }],
     overflow: "hidden",
   },
   avatarImg: {

@@ -1,6 +1,9 @@
+import { BottomNav } from "@/components/bottom-nav";
 import { Ionicons } from "@expo/vector-icons";
 import { arrayUnion, collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
 import { useEffect, useState } from "react";
+import { useRouter } from "expo-router";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   FlatList,
   Image,
@@ -15,6 +18,8 @@ import { auth, db } from "../config/firebase";
 const GRADIENT = require("../../assets/images/profile/Rectangle 5.png");
 
 export default function FriendsScreen() {
+  const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [searchText, setSearchText] = useState("");
   const [results, setResults] = useState([]);
   const [addedIds, setAddedIds] = useState(new Set());
@@ -75,6 +80,13 @@ export default function FriendsScreen() {
   return (
     <View style={styles.container}>
       <Image source={GRADIENT} style={styles.gradientOverlay} resizeMode="cover" />
+
+      <Pressable
+        style={[styles.homeBtn, { top: insets.top + 8 }]}
+        onPress={() => router.replace("/(tabs)")}
+      >
+        <Ionicons name="home" size={20} color="#68695F" />
+      </Pressable>
 
       <View style={styles.titleRow}>
         <Text style={styles.title}>Find Friends</Text>
@@ -140,6 +152,7 @@ export default function FriendsScreen() {
           </View>
         )}
       />
+      <BottomNav />
     </View>
   );
 }
@@ -148,6 +161,17 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F8F5",
+  },
+  homeBtn: {
+    position: "absolute",
+    right: 16,
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: "rgba(104,105,95,0.15)",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 10,
   },
   gradientOverlay: {
     position: "absolute",
