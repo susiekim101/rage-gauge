@@ -52,6 +52,7 @@ export default function FriendsScreen() {
           u.displayName?.toLowerCase().includes(lower) ||
           u.email?.toLowerCase().includes(lower)
         );
+      console.log("Search results:", users.map(u => ({ id: u.id, name: u.displayName, hasPhoto: !!u.photoUrl })));
       setResults(users);
     } catch (e) {
       console.error("Search error:", e);
@@ -75,7 +76,9 @@ export default function FriendsScreen() {
     <View style={styles.container}>
       <Image source={GRADIENT} style={styles.gradientOverlay} resizeMode="cover" />
 
-      <Text style={styles.title}>Find Friends</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title}>Find Friends</Text>
+      </View>
 
       {/* Search bar */}
       <View style={styles.searchBar}>
@@ -83,7 +86,7 @@ export default function FriendsScreen() {
         <TextInput
           style={styles.searchInput}
           placeholder="Search by name..."
-          placeholderTextColor="#A0A19A"
+          placeholderTextColor="#68695F"
           value={searchText}
           onChangeText={search}
           autoCapitalize="none"
@@ -153,9 +156,15 @@ const styles = StyleSheet.create({
     width: 537,
     height: 157,
   },
-  title: {
+  titleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     marginTop: 72,
     marginLeft: 28,
+    marginRight: 24,
+  },
+  title: {
     fontSize: 32,
     fontWeight: "700",
     color: "#000",
@@ -163,7 +172,7 @@ const styles = StyleSheet.create({
   searchBar: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "rgba(9, 9, 9, 0.85)",
+    backgroundColor: "rgba(228, 228, 228, 0.85)",
     borderRadius: 44,
     marginHorizontal: 24,
     marginTop: 20,
@@ -174,7 +183,7 @@ const styles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    color: "white",
+    color: "#1a1a1a",
     fontSize: 16,
     padding: 0,
   },
@@ -236,16 +245,16 @@ const styles = StyleSheet.create({
     marginTop: 2,
   },
   addBtn: {
-    backgroundColor: "#68695F",
+    backgroundColor: "#D4D5CB",
     borderRadius: 1000,
     paddingHorizontal: 18,
     paddingVertical: 8,
   },
   addedBtn: {
-    backgroundColor: "#D4D5CB",
+    backgroundColor: "#C0C1B8",
   },
   addBtnText: {
-    color: "white",
+    color: "#3a3a35",
     fontSize: 14,
     fontWeight: "600",
   },

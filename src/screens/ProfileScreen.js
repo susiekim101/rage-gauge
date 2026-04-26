@@ -2,10 +2,26 @@ import { Ionicons } from "@expo/vector-icons";
 import { Audio } from "expo-av";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
-import { useEffect, useState } from "react";
-import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { doc, getDoc, updateDoc } from "firebase/firestore";
+import {
+    collection,
+    doc,
+    documentId,
+    getDoc,
+    getDocs,
+    query,
+    updateDoc,
+    where,
+} from "firebase/firestore";
 import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { useEffect, useState } from "react";
+import {
+    FlatList,
+    Image,
+    Pressable,
+    StyleSheet,
+    Text,
+    View,
+} from "react-native";
 import { auth, db, storage } from "../config/firebase";
 
 const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
@@ -13,16 +29,36 @@ const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
 const GRADIENT = require("../../assets/images/profile/Rectangle 5.png");
 const TRUCK = require("../../assets/images/profile/🛻.png");
 
+const HEART = require("../../assets/images/friends/line-md_heart.png");
+
+const CAR_IMAGES = [
+  require("../../assets/images/friends/🏎️.png"),
+  require("../../assets/images/friends/🚗.png"),
+  require("../../assets/images/friends/🚙.png"),
+  require("../../assets/images/friends/🚕.png"),
+  require("../../assets/images/friends/🚓.png"),
+  require("../../assets/images/friends/🛻.png"),
+];
+
+function progressFromUid(uid) {
+  const sum = uid.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return ((sum % 80) + 10) / 100;
+}
+
+const BAR_WIDTH = 200;
+
 export default function ProfileScreen() {
   const router = useRouter();
   const user = auth.currentUser;
   const displayName = user?.displayName ?? user?.email?.split("@")[0] ?? "User";
   const initial = displayName[0]?.toUpperCase();
   const [photoUri, setPhotoUri] = useState(null);
+  const [friends, setFriends] = useState([]);
 
   useEffect(() => {
     playWelcome();
     loadPhoto();
+    loadFriends();
   }, []);
 
   const loadPhoto = async () => {
@@ -33,6 +69,22 @@ export default function ProfileScreen() {
       }
     } catch (e) {
       console.warn("Could not load photo:", e.message);
+    }
+  };
+
+  const loadFriends = async () => {
+    try {
+      const userSnap = await getDoc(doc(db, "users", user.uid));
+      const friendIds = userSnap.data()?.friends ?? [];
+      if (friendIds.length === 0) return;
+      const q = query(
+        collection(db, "users"),
+        where(documentId(), "in", friendIds.slice(0, 10)),
+      );
+      const snap = await getDocs(q);
+      setFriends(snap.docs.map((d) => ({ id: d.id, ...d.data() })));
+    } catch (e) {
+      console.warn("Could not load friends:", e.message);
     }
   };
 
@@ -72,7 +124,7 @@ export default function ProfileScreen() {
     if (result.canceled) return;
 
     const localUri = result.assets[0].uri;
-    setPhotoUri(localUri); // show immediately
+    setPhotoUri(localUri);
 
     try {
       const response = await fetch(localUri);
@@ -90,32 +142,78 @@ export default function ProfileScreen() {
 
   return (
     <View style={styles.container}>
-      {/* Lime gradient from asset */}
-      <Image
-        source={GRADIENT}
-        style={styles.gradientOverlay}
-        resizeMode="cover"
+      {/* Fixed header: gradient, photo, truck, name */}
+      <View style={styles.header}>
+        <Image
+          source={GRADIENT}
+          style={styles.gradientOverlay}
+          resizeMode="cover"
+        />
+
+        <Pressable style={styles.profileImageWrapper} onPress={pickPhoto}>
+          <View style={styles.profileImage}>
+            {photoUri ? (
+              <Image source={{ uri: photoUri }} style={styles.profilePhoto} />
+            ) : (
+              <Text style={styles.profileInitial}>{initial}</Text>
+            )}
+          </View>
+          <View style={styles.cameraBadge}>
+            <Ionicons name="camera" size={12} color="white" />
+          </View>
+        </Pressable>
+
+        <Image source={TRUCK} style={styles.truck} />
+        <Text style={styles.name}>{displayName}</Text>
+      </View>
+
+      {/* Scrollable friends list */}
+      <FlatList
+        style={styles.list}
+        data={friends}
+        keyExtractor={(item) => item.id}
+        contentContainerStyle={styles.listContent}
+        ListHeaderComponent={
+          <Text style={styles.sectionTitle}>Check in on your drivers</Text>
+        }
+        ListEmptyComponent={
+          <Text style={styles.emptyText}>Add friends to see them here</Text>
+        }
+        renderItem={({ item, index }) => {
+          const progress = progressFromUid(item.id);
+          const fillWidth = BAR_WIDTH * progress;
+          const carImg = CAR_IMAGES[index % CAR_IMAGES.length];
+          const showCar = progress > 0.15;
+
+          return (
+            <View style={styles.row}>
+              {item.photoUrl ? (
+                <Image
+                  source={{ uri: item.photoUrl }}
+                  style={styles.rowAvatar}
+                />
+              ) : (
+                <View style={styles.rowAvatarPlaceholder}>
+                  <Text style={styles.rowAvatarInitial}>
+                    {item.displayName?.[0]?.toUpperCase() ?? "?"}
+                  </Text>
+                </View>
+              )}
+              <Text style={styles.rowName}>{item.displayName}</Text>
+              <View style={styles.barTrack}>
+                <View style={[styles.barFill, { width: fillWidth }]} />
+                {showCar && (
+                  <Image
+                    source={carImg}
+                    style={[styles.carOnBar, { left: fillWidth - 18 }]}
+                  />
+                )}
+                <Image source={HEART} style={styles.heartOnBar} />
+              </View>
+            </View>
+          );
+        }}
       />
-
-      {/* Profile photo circle — tap to upload */}
-      <Pressable style={styles.profileImageWrapper} onPress={pickPhoto}>
-        <View style={styles.profileImage}>
-          {photoUri ? (
-            <Image source={{ uri: photoUri }} style={styles.profilePhoto} />
-          ) : (
-            <Text style={styles.profileInitial}>{initial}</Text>
-          )}
-        </View>
-        <View style={styles.cameraBadge}>
-          <Ionicons name="camera" size={12} color="white" />
-        </View>
-      </Pressable>
-
-      {/* Truck image from asset */}
-      <Image source={TRUCK} style={styles.truck} />
-
-      {/* Name */}
-      <Text style={styles.name}>{displayName}</Text>
 
       {/* Bottom navigation bar */}
       <View style={styles.bottomBar}>
@@ -149,6 +247,10 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: "#F7F8F5",
+  },
+  // ── Header ──────────────────────────────────────────────────
+  header: {
+    height: 370,
   },
   gradientOverlay: {
     position: "absolute",
@@ -218,6 +320,103 @@ const styles = StyleSheet.create({
     fontWeight: "700",
     color: "#000",
   },
+  // ── Friends list ─────────────────────────────────────────────
+  list: {
+    flex: 1,
+  },
+  listContent: {
+    paddingHorizontal: 13,
+    paddingTop: 4,
+    paddingBottom: 110,
+    gap: 8,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#000",
+    marginBottom: 10,
+    marginLeft: 4,
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#A0A19A",
+    fontSize: 15,
+    marginTop: 20,
+  },
+  row: {
+    height: 75,
+    backgroundColor: "rgba(228, 228, 228, 0.75)",
+    borderRadius: 15,
+    position: "relative",
+    overflow: "visible",
+  },
+  rowAvatar: {
+    position: "absolute",
+    left: 17,
+    top: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: "white",
+  },
+  rowAvatarPlaceholder: {
+    position: "absolute",
+    left: 17,
+    top: 12,
+    width: 50,
+    height: 50,
+    borderRadius: 25,
+    borderWidth: 3,
+    borderColor: "white",
+    backgroundColor: "#D4D5CB",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  rowAvatarInitial: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#68695F",
+  },
+  rowName: {
+    position: "absolute",
+    left: 81,
+    top: 21,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#000",
+  },
+  barTrack: {
+    position: "absolute",
+    left: 75,
+    bottom: 14,
+    width: BAR_WIDTH,
+    height: 9,
+    backgroundColor: "#C8C8C8",
+    borderRadius: 24,
+    overflow: "visible",
+  },
+  barFill: {
+    height: 9,
+    backgroundColor: "#82A0B9",
+    borderRadius: 24,
+  },
+  carOnBar: {
+    position: "absolute",
+    bottom: 3,
+    width: 36,
+    height: 36,
+    resizeMode: "contain",
+  },
+  heartOnBar: {
+    position: "absolute",
+    right: -35,
+    bottom: -10,
+    width: 28,
+    height: 28,
+    resizeMode: "contain",
+  },
+  // ── Bottom bar ───────────────────────────────────────────────
   bottomBar: {
     position: "absolute",
     left: 31,

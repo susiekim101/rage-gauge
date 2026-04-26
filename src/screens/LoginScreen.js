@@ -4,9 +4,9 @@ import {
     createUserWithEmailAndPassword,
     signInWithEmailAndPassword,
 } from "firebase/auth";
-import { doc, setDoc, getDoc } from "firebase/firestore";
-import { useState } from "react";
+import { doc, getDoc, setDoc } from "firebase/firestore";
 import { Alert, Button, StyleSheet, Text, TextInput, View } from "react-native";
+import { useState } from "react";
 import { auth, db } from "../config/firebase";
 
 export default function LoginScreen() {
