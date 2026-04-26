@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
-import { collection, getDocs } from "firebase/firestore";
-import { useState } from "react";
+import { arrayUnion, collection, doc, getDoc, getDocs, updateDoc } from "firebase/firestore";
+import { useEffect, useState } from "react";
 import {
   FlatList,
   Image,
@@ -19,6 +19,21 @@ export default function FriendsScreen() {
   const [results, setResults] = useState([]);
   const [addedIds, setAddedIds] = useState(new Set());
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    loadFriends();
+  }, []);
+
+  const loadFriends = async () => {
+    try {
+      const snap = await getDoc(doc(db, "users", auth.currentUser.uid));
+      if (snap.exists()) {
+        setAddedIds(new Set(snap.data().friends ?? []));
+      }
+    } catch (e) {
+      console.warn("Could not load friends:", e.message);
+    }
+  };
 
   const search = async (text) => {
     setSearchText(text);
@@ -45,9 +60,15 @@ export default function FriendsScreen() {
     }
   };
 
-  const addFriend = (userId) => {
+  const addFriend = async (userId) => {
     setAddedIds((prev) => new Set([...prev, userId]));
-    // TODO: write friend relationship to Firestore
+    try {
+      await updateDoc(doc(db, "users", auth.currentUser.uid), {
+        friends: arrayUnion(userId),
+      });
+    } catch (e) {
+      console.warn("Could not save friend:", e.message);
+    }
   };
 
   return (

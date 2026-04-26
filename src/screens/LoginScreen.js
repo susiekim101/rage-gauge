@@ -47,26 +47,26 @@ export default function LoginScreen() {
         password,
       );
       console.log("3. Auth success, uid:", userCredential.user.uid);
-
-      const userRef = doc(db, "users", userCredential.user.uid);
-      console.log("4. Calling getDoc...");
-      const snap = await getDoc(userRef);
-      console.log("5. getDoc done, exists:", snap.exists());
-
-      if (!snap.exists()) {
-        console.log("6. Creating Firestore user doc...");
-        const username = email.split("@")[0];
-        await setDoc(userRef, {
-          displayName: username,
-          searchName: username.toLowerCase(),
-          email,
-          photoUrl: null,
-        });
-        console.log("7. Firestore doc created");
-      }
-
-      console.log("8. Navigating to profile...");
+      console.log("4. Navigating to profile...");
       router.replace("/profile");
+
+      // Backfill Firestore in background — don't block login if it fails
+      try {
+        const userRef = doc(db, "users", userCredential.user.uid);
+        const snap = await getDoc(userRef);
+        if (!snap.exists()) {
+          const username = email.split("@")[0];
+          await setDoc(userRef, {
+            displayName: username,
+            searchName: username.toLowerCase(),
+            email,
+            photoUrl: null,
+          });
+          console.log("5. Firestore user doc created");
+        }
+      } catch (e) {
+        console.warn("Firestore backfill skipped:", e.message);
+      }
     } catch (error) {
       console.error("Login error:", error.code, error.message);
       Alert.alert("Login Error", error.message);

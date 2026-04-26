@@ -4,7 +4,9 @@ import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { Image, Pressable, StyleSheet, Text, View } from "react-native";
-import { auth } from "../config/firebase";
+import { doc, getDoc, updateDoc } from "firebase/firestore";
+import { getDownloadURL, ref, uploadBytes } from "firebase/storage";
+import { auth, db, storage } from "../config/firebase";
 
 const FUNCTION_URL = "https://speak-crgbel3l7q-uc.a.run.app";
 
@@ -20,7 +22,19 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     playWelcome();
+    loadPhoto();
   }, []);
+
+  const loadPhoto = async () => {
+    try {
+      const snap = await getDoc(doc(db, "users", user.uid));
+      if (snap.exists() && snap.data().photoUrl) {
+        setPhotoUri(snap.data().photoUrl);
+      }
+    } catch (e) {
+      console.warn("Could not load photo:", e.message);
+    }
+  };
 
   const playWelcome = async () => {
     try {
@@ -55,8 +69,22 @@ export default function ProfileScreen() {
       aspect: [1, 1],
       quality: 0.8,
     });
-    if (!result.canceled) {
-      setPhotoUri(result.assets[0].uri);
+    if (result.canceled) return;
+
+    const localUri = result.assets[0].uri;
+    setPhotoUri(localUri); // show immediately
+
+    try {
+      const response = await fetch(localUri);
+      const blob = await response.blob();
+      const storageRef = ref(storage, `profile-photos/${user.uid}`);
+      await uploadBytes(storageRef, blob);
+      const downloadUrl = await getDownloadURL(storageRef);
+      await updateDoc(doc(db, "users", user.uid), { photoUrl: downloadUrl });
+      setPhotoUri(downloadUrl);
+      console.log("Photo saved:", downloadUrl);
+    } catch (e) {
+      console.warn("Photo upload failed:", e.message);
     }
   };
 
